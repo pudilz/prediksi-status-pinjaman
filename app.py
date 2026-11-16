@@ -195,12 +195,12 @@ if tombol:
     )
 
     st.write(
-        f"Probabilitas kelas 0: "
+        f"Probabilitas Pinjaman Ditolak: "
         f"{probabilitas[0]*100:.2f}%"
     )
 
     st.write(
-        f"Probabilitas kelas 1: "
+        f"Probabilitas Pinjaman Disetujui: "
         f"{probabilitas[1]*100:.2f}%"
     )
 
