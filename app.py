@@ -22,7 +22,10 @@ st.write(
 
 st.divider()
 
-# Input data pelanggan
+# =====================================
+# DATA PELANGGAN
+# =====================================
+
 st.subheader("Data Pelanggan")
 
 usia = st.number_input(
@@ -112,6 +115,13 @@ tujuan_pinjaman = st.selectbox(
     ]
 )
 
+# =====================================
+# DATA PINJAMAN
+# =====================================
+
+st.divider()
+st.subheader("Data Pinjaman")
+
 jumlah_pinjaman = st.number_input(
     "Jumlah Pinjaman",
     min_value=0,
@@ -119,7 +129,7 @@ jumlah_pinjaman = st.number_input(
 )
 
 suku_bunga = st.number_input(
-    "Suku Bunga (%)",
+    "Suku Bunga Flat (% per Tahun)",
     min_value=0.0,
     value=10.0
 )
@@ -131,49 +141,90 @@ tenor_pinjaman = st.number_input(
 )
 
 # =====================================
+# PERHITUNGAN BUNGA FLAT
+# =====================================
+
+bunga_total = (
+    jumlah_pinjaman
+    * (suku_bunga / 100)
+    * (tenor_pinjaman / 12)
+)
+
+total_pembayaran = jumlah_pinjaman + bunga_total
+
+angsuran_pokok = (
+    jumlah_pinjaman / tenor_pinjaman
+)
+
+angsuran_bunga = (
+    bunga_total / tenor_pinjaman
+)
+
+angsuran_bulanan = (
+    angsuran_pokok + angsuran_bunga
+)
+
+# =====================================
 # PERHITUNGAN RASIO OTOMATIS
 # =====================================
 
-# Mengubah pendapatan tahunan menjadi bulanan
-pendapatan_bulanan = pendapatan_tahunan / 12
-
-# Menghitung rasio hutang
+# Rasio Hutang terhadap Pendapatan
 rasio_hutang_terhadap_pendapatan = (
     hutang_saat_ini / pendapatan_tahunan
     if pendapatan_tahunan > 0 else 0
 )
 
-# Menghitung rasio pinjaman
+# Rasio Pinjaman terhadap Pendapatan
 rasio_pinjaman_terhadap_pendapatan = (
     jumlah_pinjaman / pendapatan_tahunan
     if pendapatan_tahunan > 0 else 0
 )
 
-# Menghitung angsuran bulanan
-bunga_bulanan = suku_bunga / 100 / 12
+# Rasio Pembayaran terhadap Pendapatan
+# Mengikuti rumus pada dataset:
+# Jumlah Pinjaman / (3 x Pendapatan Tahunan)
 
-if bunga_bulanan > 0:
-    angsuran_bulanan = (
-        jumlah_pinjaman * bunga_bulanan
-        / (1 - (1 + bunga_bulanan) ** (-tenor_pinjaman))
-    )
-else:
-    angsuran_bulanan = (
-        jumlah_pinjaman / tenor_pinjaman
-    )
-
-# Menghitung rasio pembayaran
 rasio_pembayaran_terhadap_pendapatan = (
-    angsuran_bulanan / pendapatan_bulanan
-    if pendapatan_bulanan > 0 else 0
+    jumlah_pinjaman / (3 * pendapatan_tahunan)
+    if pendapatan_tahunan > 0 else 0
 )
 
 # =====================================
-# MENAMPILKAN HASIL RASIO
+# HASIL SIMULASI PINJAMAN
 # =====================================
 
 st.divider()
+st.subheader("💰 Simulasi Angsuran Bunga Flat")
 
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric(
+        "Total Bunga",
+        f"{bunga_total:,.2f}"
+    )
+
+with col2:
+    st.metric(
+        "Total Pembayaran",
+        f"{total_pembayaran:,.2f}"
+    )
+
+st.success(
+    f"Estimasi Angsuran Bulanan: "
+    f"{angsuran_bulanan:,.2f}"
+)
+
+st.caption(
+    "Perhitungan menggunakan metode bunga flat. "
+    "Angsuran pokok dan bunga memiliki nilai tetap setiap bulan."
+)
+
+# =====================================
+# HASIL RASIO
+# =====================================
+
+st.divider()
 st.subheader("📊 Hasil Perhitungan Rasio")
 
 col1, col2, col3 = st.columns(3)
@@ -181,40 +232,37 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.metric(
         "Rasio Hutang",
-        f"{rasio_hutang_terhadap_pendapatan:.2f}"
+        f"{rasio_hutang_terhadap_pendapatan:.3f}"
     )
 
 with col2:
     st.metric(
         "Rasio Pinjaman",
-        f"{rasio_pinjaman_terhadap_pendapatan:.2f}"
+        f"{rasio_pinjaman_terhadap_pendapatan:.3f}"
     )
 
 with col3:
     st.metric(
         "Rasio Pembayaran",
-        f"{rasio_pembayaran_terhadap_pendapatan:.2f}"
+        f"{rasio_pembayaran_terhadap_pendapatan:.3f}"
     )
 
 st.caption(
-    "Rasio dihitung otomatis berdasarkan data yang dimasukkan."
-)
-
-st.write(
-    f"Estimasi Angsuran Bulanan: "
-    f"**{angsuran_bulanan:,.2f}**"
+    "Ketiga rasio dihitung otomatis berdasarkan "
+    "data yang dimasukkan dan mengikuti rumus dataset."
 )
 
 # =====================================
-# TOMBOL PREDIKSI
+# PREDIKSI MACHINE LEARNING
 # =====================================
+
+st.divider()
 
 tombol = st.button(
     "🔍 Prediksi Status Pinjaman",
     use_container_width=True
 )
 
-# Proses prediksi
 if tombol:
 
     data = pd.DataFrame([{
@@ -233,9 +281,12 @@ if tombol:
         'tujuan_pinjaman': tujuan_pinjaman,
         'jumlah_pinjaman': jumlah_pinjaman,
         'suku_bunga': suku_bunga,
-        'rasio_hutang_terhadap_pendapatan': rasio_hutang_terhadap_pendapatan,
-        'rasio_pinjaman_terhadap_pendapatan': rasio_pinjaman_terhadap_pendapatan,
-        'rasio_pembayaran_terhadap_pendapatan': rasio_pembayaran_terhadap_pendapatan
+        'rasio_hutang_terhadap_pendapatan':
+            rasio_hutang_terhadap_pendapatan,
+        'rasio_pinjaman_terhadap_pendapatan':
+            rasio_pinjaman_terhadap_pendapatan,
+        'rasio_pembayaran_terhadap_pendapatan':
+            rasio_pembayaran_terhadap_pendapatan
     }])
 
     # Feature Engineering
@@ -249,8 +300,6 @@ if tombol:
     hasil = model.predict(data)[0]
 
     probabilitas = model.predict_proba(data)[0]
-
-    st.divider()
 
     st.subheader("📋 Hasil Prediksi")
 
@@ -272,4 +321,4 @@ if tombol:
         "Hasil ini merupakan prediksi model "
         "untuk keperluan analisis dan pembelajaran, "
         "bukan keputusan kredit resmi."
-    )
+        )
